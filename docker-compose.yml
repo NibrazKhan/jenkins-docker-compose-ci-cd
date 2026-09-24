@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+
+  # Jenkins CI/CD Server
+  jenkins:
+    build:
+      context: ./jenkins
+
+    container_name: jenkins-server
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+
+    volumes:
+
+      # Persistent Jenkins configuration
+      - jenkins_home:/var/jenkins_home
+
+      # Allow Jenkins to communicate with Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
+
+
+    networks:
+      - cicd-network
+
+
+    depends_on:
+      - docker
+
+
+  # Docker-in-Docker Service
+  docker:
+
+    image: docker:dind
+
+    container_name: docker-dind
+
+    privileged: true
+
+    restart: unless-stopped
+
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+
+    volumes:
+
+      # Persistent Docker storage
+      - docker_data:/var/lib/docker
+
+
+    networks:
+      - cicd-network
+
+
+volumes:
+
+  # Jenkins data persistence
+  jenkins_home:
+
+  # Docker image persistence
+  docker_data:
+
+
+networks:
+
+  cicd-network:
+
+
