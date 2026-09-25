@@ -1,75 +1,40 @@
-version: "3.8"
-
 services:
 
-  # Jenkins CI/CD Server
+  # Jenkins Continuous Integration / Continuous Deployment server.
+  # This container hosts the Jenkins web interface, manages build jobs,
+  # executes pipelines, and automates application build, test, and deployment tasks.
   jenkins:
     build:
+      # Builds the Jenkins image using the Dockerfile located in the ./jenkins directory.
       context: ./jenkins
 
+    # Human-readable name assigned to the container.
     container_name: jenkins-server
 
+    # Automatically restarts the container unless it is explicitly stopped.
     restart: unless-stopped
 
     ports:
+      # Port 8080 provides access to the Jenkins web dashboard through a browser.
+      # Format: HOST_PORT:CONTAINER_PORT
       - "8080:8080"
+
+      # Port 50000 is used by Jenkins inbound agents/executors
+      # to connect back to the Jenkins controller for distributed builds.
       - "50000:50000"
 
     environment:
+      # Enables the Jenkins first-time setup wizard when the container starts.
+      # This allows the administrator to perform the initial configuration manually.
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
 
     volumes:
-
-      # Persistent Jenkins configuration
+      # Stores Jenkins configuration, job definitions, plugins, credentials,
+      # workspace data, and build history persistently.
+      # Without this volume, all Jenkins data would be lost when the container is removed.
       - jenkins_home:/var/jenkins_home
 
-      # Allow Jenkins to communicate with Docker daemon
-      - /var/run/docker.sock:/var/run/docker.sock
-
-
-    networks:
-      - cicd-network
-
-
-    depends_on:
-      - docker
-
-
-  # Docker-in-Docker Service
-  docker:
-
-    image: docker:dind
-
-    container_name: docker-dind
-
-    privileged: true
-
-    restart: unless-stopped
-
-    environment:
-      DOCKER_TLS_CERTDIR: ""
-
-    volumes:
-
-      # Persistent Docker storage
-      - docker_data:/var/lib/docker
-
-
-    networks:
-      - cicd-network
-
-
-volumes:
-
-  # Jenkins data persistence
-  jenkins_home:
-
-  # Docker image persistence
-  docker_data:
-
-
-networks:
-
-  cicd-network:
-
-
+      # Mounts the host Docker socket inside the Jenkins container.
+      # This allows Jenkins jobs to execute Docker CLI commands and manage
+      # containers/images using the host Docker daemon.
+      - /var/run/docker
